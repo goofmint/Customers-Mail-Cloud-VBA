@@ -1,5 +1,10 @@
 # Customers Mail Cloud library for VBA
 
+## Dependence
+
+- [VBA-tools/VBA-JSON: JSON conversion and parsing for VBA](https://github.com/VBA-tools/VBA-JSON)
+- Microsoft Script Runtime
+
 ## Usage
 
 ### Init
