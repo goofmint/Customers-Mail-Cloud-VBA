@@ -13,6 +13,12 @@ Private Urls(3) As String
 Public Url As String
 Public Subject As String
 Public Text As String
+Public Html As String
+Public EnvFrom As String
+Public ReplyTo As clsCustomersMailCloudAddress
+Public Headers As Dictionary
+Public Charset As String
+
 Private toAddress() As clsCustomersMailCloudAddress
 Public fromAddress As clsCustomersMailCloudAddress
 
@@ -21,6 +27,8 @@ Private Sub Class_Initialize()
     Urls(1) = "https://te.smtps.jp/api/v2/emails/send.json"
     Urls(2) = "https://SUBDOMAIN.smtps.jp/api/v2/emails/send.json"
     Set fromAddress = New clsCustomersMailCloudAddress
+    Charset = "UTF-8"
+    Set Headers = New Dictionary
 End Sub
 
 
@@ -55,13 +63,44 @@ Public Sub SetFrom(Address As clsCustomersMailCloudAddress)
 End Sub
 
 Public Function Send() As Boolean
-    Dim params As New Dictionary
+    Dim Params As New Dictionary
     
-    params.Add "api_user", ApiUser
-    params.Add "api_key", ApiKey
-    params.Add "subject", Subject
-    params.Add "text", Text
-
+    Params.Add "api_user", ApiUser
+    Params.Add "api_key", ApiKey
+    Params.Add "subject", Subject
+    Params.Add "text", Text
+    
+    If Html <> "" Then
+        Params.Add "html", Html
+    End If
+    If EnvFrom <> "" Then
+        Params.Add "envfrom", EnvFrom
+    End If
+    
+    If ReplyTo Is Nothing Then
+    Else
+        Dim ReplyParams As New Dictionary
+        ReplyParams.Add "name", ReplyTo.Name
+        ReplyParams.Add "address", ReplyTo.Address
+        Params.Add "replyto", ReplyParams
+    End If
+    If UBound(Headers.Keys) > -1 Then
+        Dim arr As Collection
+        Set arr = New Collection
+    
+        Dim key As Variant
+        For Each key In Headers.Keys
+            Dim item As Dictionary
+            Set item = New Dictionary
+            item.Add "name", key
+            item.Add "value", Headers(key)
+            arr.Add item
+        Next key
+        Params.Add "headers", arr
+    End If
+    If Charset <> "" Then
+        Params.Add "charset", Charset
+    End If
     
     Dim i As Integer
     Dim toParams() As Dictionary
@@ -75,19 +114,21 @@ Public Function Send() As Boolean
         toParams(i).Add "name", toAddress(i).Name
         toParams(i).Add "address", toAddress(i).Address
     Next i
-    params.Add "to", toParams
+    Params.Add "to", toParams
     
     Dim fromParams As New Dictionary
     fromParams.Add "name", fromAddress.Name
     fromParams.Add "address", fromAddress.Address
-    params.Add "from", fromParams
+    Params.Add "from", fromParams
     
     Dim httpReq As Object
     Set httpReq = CreateObject("MSXML2.ServerXMLHTTP.6.0")
     httpReq.Open "POST", Url, False
     httpReq.setRequestHeader "Content-Type", "application/json"
     
-    httpReq.Send (JsonConverter.ConvertToJson(params))
+    httpReq.Send JsonConverter.ConvertToJson(Params)
+    Debug.Print httpReq.Status
+    Debug.Print httpReq.responseText
     Send = True
 End Function
 
